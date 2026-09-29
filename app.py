@@ -29,6 +29,7 @@ FLEET_LABEL = {"PU_BV": "Pick-up / L300", "CDE": "CDE", "CDD": "CDD", "FUSO": "F
                "CARGO": "Cargo", "CUSTOM": "Tanpa jenis truk"}
 REGENCY_LEVEL = "Semua kecamatan (tarif tingkat kab/kota)"
 LOADING_FEE_PER_TON = 35_000
+MOBILE = "Mobi" in (st.context.headers.get("User-Agent") or "")
 
 
 def rp(x: float) -> str:
@@ -268,7 +269,7 @@ with left:
     if chosen:
         table = pd.DataFrame({
             "ir": chosen,
-            "hapus": "❌",
+            "hapus": ":material/delete:",
             "foto": [thumb(ir, pmap.at[ir, "category"]) for ir in chosen],
             "produk": [pmap.at[ir, "name"] for ir in chosen],
             "jumlah": [qty[ir] for ir in chosen],
@@ -280,16 +281,16 @@ with left:
             width="stretch", row_height=54, column_order=["hapus", "foto", "produk", "jumlah", "berat"],
             disabled=["foto", "produk", "berat"],
             column_config={
-                "hapus": st.column_config.ButtonColumn("", width=44, type="tertiary", help="Keluarkan produk",
+                "hapus": st.column_config.ButtonColumn("", width=36, type="tertiary", help="Keluarkan produk",
                                                        on_click=remove_product, args=(chosen,), key="remove_click"),
                 "foto": st.column_config.ImageColumn("", width=50),
-                "produk": st.column_config.TextColumn("Produk", width=170),
+                "produk": st.column_config.TextColumn("Produk", width=170 if MOBILE else 430),
                 "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=80,
-                                                        help="Ketik jumlah unit yang dikirim"),
-                "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70),
+                                                        alignment="center", help="Ketik jumlah unit yang dikirim"),
+                "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70, alignment="center"),
             })
         qty = {ir: 0 if pd.isna(n) else int(n) for ir, n in zip(edited["ir"], edited["jumlah"])}
-        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Klik ❌ untuk mengeluarkan produk.</div>',
+        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Klik ikon tempat sampah untuk mengeluarkan produk.</div>',
                     unsafe_allow_html=True)
     else:
         st.markdown('<div class="empty slim">Cari produk di atas, lalu isi jumlahnya di tabel yang muncul.</div>',
