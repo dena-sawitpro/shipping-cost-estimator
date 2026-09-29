@@ -158,7 +158,8 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .waybill .grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem 1rem;margin-top:1rem;}
 .waybill .grid div{font-size:.9rem;color:var(--ink);font-weight:600;}
 .waybill .grid small{display:block;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;}
-.fee{margin-top:1rem;padding:.55rem .75rem;border-radius:10px;background:var(--sun-soft);font-size:.76rem;color:#5A4B00;line-height:1.45;}
+.fee{margin-top:1rem;padding:.55rem .75rem;border-radius:10px;background:var(--sun-soft);font-size:.76rem;color:#5A4B00;line-height:1.55;
+  display:flex;flex-direction:column;font-variant-numeric:tabular-nums;}
 .fee b{color:var(--ink);}
 .fine{margin-top:.55rem;font-size:.72rem;color:var(--muted);line-height:1.45;}
 .empty{margin-top:.9rem;background:var(--paper);border:1px dashed var(--line);border-radius:var(--radius);padding:1.6rem 1.2rem;
@@ -370,8 +371,8 @@ with right:
       <div><small>Skema</small>{scheme}</div>
       {extra}
     </div>
-    <div class="fee">Potensi tambahan biaya muat <b>{rp(loading_fee)}</b> ({loading_tons} ton × {rp(LOADING_FEE_PER_TON)})
-      · total jadi <b>{rp(best['estimate'] + loading_fee)}</b></div>
+    <div class="fee"><span>+ Biaya muat: {loading_tons} ton × {rp(LOADING_FEE_PER_TON)} = <b>{rp(loading_fee)}</b></span>
+      <span>Total: {rp(best['estimate'])} + {rp(loading_fee)} = <b>{rp(best['estimate'] + loading_fee)}</b></span></div>
     {join_note}
   </div>
 </div>
