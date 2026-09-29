@@ -232,6 +232,14 @@ def product_label(ir: str) -> str:
     return f"{CATEGORY_STYLE.get(pmap.at[ir, 'category'], ('📦',))[0]}  {pmap.at[ir, 'name']}"
 
 
+def drop_ticked(editor_key: str, irs: list[str]):
+    """Remove products ticked in the table's delete column; runs as a callback so the search box can be updated."""
+    edits = st.session_state[editor_key]["edited_rows"]
+    gone = {irs[int(i)] for i, change in edits.items() if change.get("hapus")}
+    if gone:
+        st.session_state["chosen"] = [ir for ir in st.session_state.get("chosen", []) if ir not in gone]
+
+
 left, right = st.columns([1.5, 1], gap="large")
 
 # ---------- step 1: products ----------
@@ -255,16 +263,19 @@ with left:
     if chosen:
         table = pd.DataFrame({
             "ir": chosen,
+            "hapus": False,
             "foto": [thumb(ir, pmap.at[ir, "category"]) for ir in chosen],
             "produk": [pmap.at[ir, "name"] for ir in chosen],
             "jumlah": [qty[ir] for ir in chosen],
             "berat": [float(pmap.at[ir, "weight_kg"]) for ir in chosen],
         })
+        editor_key = "ed_" + hashlib.md5(",".join(chosen).encode()).hexdigest()[:12]
         edited = st.data_editor(
-            table, key="ed_" + hashlib.md5(",".join(chosen).encode()).hexdigest()[:12], hide_index=True,
-            width="stretch", row_height=54, column_order=["foto", "produk", "jumlah", "berat"],
+            table, key=editor_key, hide_index=True, on_change=drop_ticked, args=(editor_key, chosen),
+            width="stretch", row_height=54, column_order=["hapus", "foto", "produk", "jumlah", "berat"],
             disabled=["foto", "produk", "berat"],
             column_config={
+                "hapus": st.column_config.CheckboxColumn("🗑", width=40, help="Centang untuk mengeluarkan produk"),
                 "foto": st.column_config.ImageColumn("", width=50),
                 "produk": st.column_config.TextColumn("Produk", width=170),
                 "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=80,
@@ -272,7 +283,7 @@ with left:
                 "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70),
             })
         qty = {ir: 0 if pd.isna(n) else int(n) for ir, n in zip(edited["ir"], edited["jumlah"])}
-        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Hapus produk lewat tanda × di kotak pencarian.</div>',
+        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Centang 🗑 untuk mengeluarkan produk.</div>',
                     unsafe_allow_html=True)
     else:
         st.markdown('<div class="empty slim">Cari produk di atas, lalu isi jumlahnya di tabel yang muncul.</div>',
