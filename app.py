@@ -101,7 +101,7 @@ def options(route: pd.DataFrame, total_kg: float) -> pd.DataFrame:
     estimate = join.where(per_trip, route["price_per_kg"] * total_kg)
     minimum = route["price_per_trip"].where(per_trip, route["price_per_kg"] * lo)
     out = route.assign(lo=lo, trips=trips, charter=charter, estimate=estimate.astype(float), minimum=minimum,
-                       join_route=per_trip & cap.notna(), eligible=total_kg >= lo,
+                       join_route=per_trip & cap.notna() & (join < charter - 0.5), eligible=total_kg >= lo,
                        fits=(total_kg >= lo) & ((total_kg <= cap) | cap.isna()))
     return out.dropna(subset=["estimate"]).sort_values(["estimate", "fits"], ascending=[True, False]).reset_index(drop=True)
 
@@ -120,7 +120,7 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
 :root{--ink:#1E2E1A;--palm:#426636;--palm-deep:#2E4A25;--leaf:#E6EEDC;--sun:#FCD100;--sun-soft:#FFF4C2;--cream:#F7F4EA;
-  --paper:#FFFEF9;--line:#E0DAC6;--muted:#66705F;--radius:16px;}
+  --paper:#FFFEF9;--line:#E0DAC6;--muted:#66705F;--alert:#C63D2F;--radius:16px;}
 html,body,[class*="css"],.stMarkdown,.stSelectbox,.stTextInput{font-family:'Inter',system-ui,sans-serif;}
 .stApp{background:radial-gradient(1200px 500px at 110% -10%,#E9F0DD 0%,transparent 60%),var(--cream);}
 header[data-testid="stHeader"]{background:transparent;height:0;}
@@ -138,14 +138,6 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .step span{font-family:'Fraunces',Georgia,serif;font-size:1.3rem;color:var(--ink);}
 .help{font-size:.78rem;color:var(--muted);margin:-.2rem 0 .5rem;}
 [data-testid="stDataFrame"]{border-radius:14px;overflow:hidden;box-shadow:0 14px 30px -24px rgba(30,46,26,.6);}
-.cart{margin-top:.7rem;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;}
-.cart .h{display:flex;justify-content:space-between;align-items:center;padding:.55rem .9rem;background:var(--leaf);
-  font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--palm-deep);font-weight:700;}
-.cart .row{display:flex;align-items:center;gap:.7rem;padding:.45rem .9rem;border-top:1px solid #EEE8D6;}
-.cart img{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:#fff;object-fit:contain;flex:none;}
-.cart .n{flex:1;min-width:0;font-size:.85rem;font-weight:600;color:var(--ink);line-height:1.2;}
-.cart .n small{display:block;font-weight:400;color:var(--muted);font-size:.72rem;margin-top:.1rem;}
-.cart .s{font-variant-numeric:tabular-nums;font-weight:700;color:var(--palm);font-size:.85rem;white-space:nowrap;}
 .st-key-summary{position:sticky;top:1rem;}
 .total{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:.6rem;background:linear-gradient(135deg,#FFFEF9 0%,#F3F7EC 100%);
   border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.2rem;}
@@ -154,23 +146,25 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .waybill{position:relative;margin-top:.9rem;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
   overflow:hidden;box-shadow:0 20px 40px -28px rgba(30,46,26,.55);animation:rise .4s ease-out;}
 .waybill .head{background:var(--palm);color:#F4F1E4;padding:1rem 1.3rem;}
-.waybill .head .eyebrow{padding-right:6.5rem;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--sun);font-weight:700;}
+.waybill .head .eyebrow{font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--sun);font-weight:700;}
 .waybill .route{font-family:'Fraunces',Georgia,serif;font-size:1.2rem;margin-top:.2rem;line-height:1.3;}
 .waybill .route em{color:var(--sun);font-style:normal;padding:0 .35rem;}
 .waybill .body{padding:1.1rem 1.3rem 1.2rem;border-top:2px dashed var(--line);}
 .waybill .price{font-family:'Fraunces',Georgia,serif;font-size:2.3rem;color:var(--ink);line-height:1;}
-.waybill .price sup{font-family:'Inter',sans-serif;font-size:.72rem;font-weight:700;color:var(--palm);background:var(--sun-soft);
-  border-radius:99px;padding:.12rem .5rem;margin-left:.4rem;vertical-align:.9rem;letter-spacing:.02em;}
+.badges{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;}
+.badge{display:inline-flex;align-items:center;border-radius:99px;padding:.22rem .7rem;font-size:.7rem;font-weight:700;letter-spacing:.04em;}
+.badge.best{background:var(--sun);color:var(--palm-deep);}
+.badge.join{background:var(--alert);color:#fff;}
 .waybill .grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem 1rem;margin-top:1rem;}
 .waybill .grid div{font-size:.9rem;color:var(--ink);font-weight:600;}
 .waybill .grid small{display:block;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;}
-.stamp{position:absolute;right:1rem;top:1rem;background:var(--sun);color:var(--palm-deep);border-radius:99px;padding:.2rem .65rem;
-  font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;}
 .fee{margin-top:1rem;padding:.55rem .75rem;border-radius:10px;background:var(--sun-soft);font-size:.76rem;color:#5A4B00;line-height:1.45;}
 .fee b{color:var(--ink);}
 .fine{margin-top:.55rem;font-size:.72rem;color:var(--muted);line-height:1.45;}
 .empty{margin-top:.9rem;background:var(--paper);border:1px dashed var(--line);border-radius:var(--radius);padding:1.6rem 1.2rem;
   color:var(--muted);text-align:center;font-size:.92rem;}
+.empty.slim{margin-top:.6rem;padding:1rem;font-size:.85rem;}
+.help{margin-top:.5rem;}
 .empty b{display:block;font-family:'Fraunces',Georgia,serif;font-size:1.1rem;color:var(--ink);margin-bottom:.25rem;}
 table.alt{width:100%;border-collapse:separate;border-spacing:0;font-size:.88rem;background:var(--paper);border:1px solid var(--line);
   border-radius:var(--radius);overflow:hidden;box-shadow:0 14px 30px -24px rgba(30,46,26,.6);}
@@ -185,7 +179,7 @@ table.alt td.r,table.alt th.r{text-align:right;font-variant-numeric:tabular-nums
 table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--muted);margin-top:.1rem;}
 .tag{display:inline-block;font-size:.68rem;padding:.06rem .45rem;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin:.1rem .15rem 0 0;}
 .tag.fit{border-color:var(--palm);color:var(--palm);background:var(--leaf);}
-.tag.join{border-color:#E3C200;color:#6B5A00;background:var(--sun-soft);}
+.tag.join{border-color:var(--alert);color:#fff;background:var(--alert);font-weight:600;}
 [data-testid="stExpander"] details{background:var(--paper);border:1px solid var(--line);border-radius:14px;}
 .foot{margin-top:1rem;font-size:.75rem;color:var(--muted);}
 @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
@@ -231,8 +225,12 @@ products, rates = load()
 products = products.sort_values("category", key=lambda c: c.map({k: i for i, k in enumerate(CATEGORY_STYLE)}).fillna(99),
                                 kind="stable")
 pmap = products.set_index("ir")
-qty: dict[str, int] = st.session_state.setdefault("qty", {})
-st.session_state.setdefault("editor_nonce", 0)
+CATEGORIES = [c for c in CATEGORY_STYLE if c in set(products["category"])]
+
+
+def product_label(ir: str) -> str:
+    return f"{CATEGORY_STYLE.get(pmap.at[ir, 'category'], ('📦',))[0]}  {pmap.at[ir, 'name']}"
+
 
 left, right = st.columns([1.5, 1], gap="large")
 
@@ -240,78 +238,66 @@ left, right = st.columns([1.5, 1], gap="large")
 
 with left:
     step(1, "Pilih produk")
-    st.markdown('<div class="help">Ketik jumlah unit langsung di kolom <b>Jumlah</b>. Produk dengan jumlah 0 tidak dihitung.</div>',
-                unsafe_allow_html=True)
-    picked_cats = st.pills("Kategori", [f"{CATEGORY_STYLE[c][0]} {c}" for c in CATEGORY_STYLE],
-                           selection_mode="multi", label_visibility="collapsed")
-    c_search, c_only = st.columns([3, 1.3], vertical_alignment="center")
-    search = c_search.text_input("Cari produk", placeholder="🔍  Cari nama produk…", label_visibility="collapsed")
-    only_chosen = c_only.toggle("Yang dipilih saja", disabled=not qty)
+    picked = st.session_state.get("cats") or CATEGORIES
+    c_filter, c_search = st.columns([1, 2.8], vertical_alignment="bottom")
+    with c_filter.popover("Semua kategori" if len(picked) == len(CATEGORIES) else f"{len(picked)} kategori",
+                          icon=":material/filter_list:", width="stretch"):
+        st.pills("Kategori", CATEGORIES, format_func=lambda c: f"{CATEGORY_STYLE[c][0]} {c}", selection_mode="multi",
+                 default=CATEGORIES, key="cats")
+        st.caption("Semua kategori aktif secara default. Klik untuk menyaring.")
+    already = st.session_state.get("chosen", [])
+    pool = products[products["category"].isin(picked) | products["ir"].isin(already)]
+    chosen = c_search.multiselect("Cari produk", pool["ir"].tolist(), format_func=product_label, key="chosen",
+                                  placeholder="🔍  Cari & pilih produk…", label_visibility="collapsed")
+    chosen = list(dict.fromkeys(chosen))
+    qty = {ir: st.session_state.get("qty", {}).get(ir, 1) for ir in chosen}
 
-    shown = products
-    if picked_cats:
-        shown = shown[shown["category"].isin([p.split(" ", 1)[1] for p in picked_cats])]
-    if search:
-        shown = shown[shown["name"].str.contains(search, case=False, regex=False)]
-    if only_chosen:
-        shown = shown[shown["ir"].isin(qty)]
-
-    table = pd.DataFrame({
-        "ir": shown["ir"],
-        "foto": [thumb(ir, c) for ir, c in zip(shown["ir"], shown["category"])],
-        "produk": shown["name"],
-        "berat": shown["weight_kg"].astype(float),
-        "jumlah": [qty.get(ir, 0) for ir in shown["ir"]],
-    }).reset_index(drop=True)
-    signature = ",".join(table["ir"]) + f"|{st.session_state.editor_nonce}"
-    edited = st.data_editor(
-        table, key="ed_" + hashlib.md5(signature.encode()).hexdigest()[:12], hide_index=True, width="stretch",
-        height=min(420, 44 + 54 * max(len(table), 1)), row_height=54,
-        column_order=["foto", "produk", "jumlah", "berat"],
-        disabled=["foto", "produk", "berat"],
-        column_config={
-            "foto": st.column_config.ImageColumn("", width=50),
-            "produk": st.column_config.TextColumn("Produk", width=170),
-            "jumlah": st.column_config.NumberColumn("Jumlah", min_value=0, step=1, format="%d", width=80,
-                                                    help="Ketik jumlah unit yang dikirim"),
-            "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70),
+    if chosen:
+        table = pd.DataFrame({
+            "ir": chosen,
+            "foto": [thumb(ir, pmap.at[ir, "category"]) for ir in chosen],
+            "produk": [pmap.at[ir, "name"] for ir in chosen],
+            "jumlah": [qty[ir] for ir in chosen],
+            "berat": [float(pmap.at[ir, "weight_kg"]) for ir in chosen],
         })
-    for ir, n in zip(edited["ir"], edited["jumlah"]):
-        n = 0 if pd.isna(n) else int(n)
-        if n > 0:
-            qty[ir] = n
-        else:
-            qty.pop(ir, None)
-
+        edited = st.data_editor(
+            table, key="ed_" + hashlib.md5(",".join(chosen).encode()).hexdigest()[:12], hide_index=True,
+            width="stretch", row_height=54, column_order=["foto", "produk", "jumlah", "berat"],
+            disabled=["foto", "produk", "berat"],
+            column_config={
+                "foto": st.column_config.ImageColumn("", width=50),
+                "produk": st.column_config.TextColumn("Produk", width=170),
+                "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=80,
+                                                        help="Ketik jumlah unit yang dikirim"),
+                "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70),
+            })
+        qty = {ir: 0 if pd.isna(n) else int(n) for ir, n in zip(edited["ir"], edited["jumlah"])}
+        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Hapus produk lewat tanda × di kotak pencarian.</div>',
+                    unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="empty slim">Cari produk di atas, lalu isi jumlahnya di tabel yang muncul.</div>',
+                    unsafe_allow_html=True)
+    st.session_state["qty"] = qty
     total_kg = sum(n * float(pmap.at[ir, "weight_kg"]) for ir, n in qty.items())
-    if qty:
-        rows = "".join(
-            f'<div class="row"><img src="{thumb(ir, pmap.at[ir, "category"])}" alt="">'
-            f'<div class="n">{html.escape(pmap.at[ir, "name"])}<small>{num(n)} × {kg(pmap.at[ir, "weight_kg"])}'
-            f'{" · berat estimasi dari nama" if pmap.at[ir, "weight_source"] == "judul" else ""}</small></div>'
-            f'<div class="s">{kg(n * pmap.at[ir, "weight_kg"])}</div></div>'
-            for ir, n in qty.items())
-        st.markdown(f'<div class="cart"><div class="h"><span>Dipilih · {len(qty)} produk</span>'
-                    f'<span>{kg(total_kg)}</span></div>{rows}</div>', unsafe_allow_html=True)
-        if st.button("Kosongkan pilihan", type="tertiary", icon=":material/delete_sweep:"):
-            qty.clear()
-            st.session_state.editor_nonce += 1
-            st.rerun()
 
     # ---------- step 2: route ----------
 
     step(2, "Tentukan rute")
-    origin = st.selectbox("Asal (kab/kota)", sorted(rates["origin_regency"].dropna().unique()), index=None,
-                          placeholder="Pilih asal", key="origin")
-    from_origin = rates[rates["origin_regency"] == origin]
     c1, c2 = st.columns(2)
-    dest = c1.selectbox("Tujuan (kab/kota)", sorted(from_origin["dest_regency"].dropna().unique()), index=None,
-                        placeholder="Pilih tujuan", disabled=origin is None, key="dest")
+    origin = c1.selectbox("Dari (kab/kota)", sorted(rates["origin_regency"].dropna().unique()), index=None,
+                          placeholder="Pilih kota asal", key="origin")
+    from_origin = rates[rates["origin_regency"] == origin]
+    destinations = {}
+    for regency, g in from_origin.groupby("dest_regency"):
+        districts = sorted(g["dest_district"].dropna().unique())
+        for d in districts:
+            destinations[f"{d} · {regency}"] = (regency, d)
+        if not districts:
+            destinations[f"{regency} · semua kecamatan"] = (regency, REGENCY_LEVEL)
+    pick = c2.selectbox("Ke (kecamatan / kab)", sorted(destinations), index=None, disabled=origin is None,
+                        placeholder="Ketik kecamatan atau kabupaten", key="dest_pick")
+    dest, district = destinations.get(pick, (None, None))
     to_dest = from_origin[from_origin["dest_regency"] == dest]
-    districts = sorted(to_dest["dest_district"].dropna().unique())
-    district_opts = districts or ([REGENCY_LEVEL] if dest else [])
-    district = c2.selectbox("Kecamatan tujuan", district_opts, index=None if districts else 0,
-                            placeholder="Pilih kecamatan", disabled=dest is None, key="district")
 
 # ---------- step 3: summary & recommendation ----------
 
@@ -334,7 +320,7 @@ with right:
             unsafe_allow_html=True)
 
         if not ready:
-            todo = "Isi jumlah produk" if total_kg <= 0 else "Lengkapi asal, tujuan, dan kecamatan"
+            todo = "Cari dan pilih produk" if total_kg <= 0 else "Lengkapi kota asal dan tujuan"
             st.markdown(f'<div class="empty"><b>Belum ada estimasi</b>{todo} untuk melihat ongkos kirim termurah.</div>',
                         unsafe_allow_html=True)
         elif eligible.empty:
@@ -349,19 +335,19 @@ with right:
             else:
                 scheme = f"Per kg · {rp(best['price_per_kg'])}"
                 extra = f"<div><small>Per kg efektif</small>{rp(best['estimate'] / total_kg)}/kg</div>"
-            flag = "<sup>*join route</sup>" if best["join_route"] else ""
+            flag = '<span class="badge join">*join route · bersyarat</span>' if best["join_route"] else ""
             join_note = (f'<div class="fine">*Join route: {rp(best["price_per_trip"])} ÷ {num(best["capacity_max_kg"])} kg × '
                          f'{kg(total_kg)}. Berlaku bila muatan digabung dengan kiriman lain di rute yang sama; '
                          f'kalau sewa satu truk penuh {rp(best["charter"])}.</div>') if best["join_route"] else ""
             st.markdown(f"""
 <div class="waybill">
   <div class="head">
-    <div class="stamp">Termurah</div>
     <div class="eyebrow">Surat jalan estimasi · {kg(total_kg)}</div>
     <div class="route">{html.escape(origin)}<em>→</em>{html.escape(place)}</div>
   </div>
   <div class="body">
-    <div class="price">{rp(best['estimate'])}{flag}</div>
+    <div class="badges"><span class="badge best">★ Termurah</span>{flag}</div>
+    <div class="price">{rp(best['estimate'])}</div>
     <div class="grid">
       <div><small>Vendor</small>{html.escape(best['logistic_vendor'])}</div>
       <div><small>Armada</small>{FLEET_LABEL.get(best['fleet'], best['fleet'])} · {capacity(best)}</div>
