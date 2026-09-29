@@ -276,21 +276,23 @@ with left:
             "berat": [float(pmap.at[ir, "weight_kg"]) for ir in chosen],
         })
         editor_key = "ed_" + hashlib.md5(",".join(chosen).encode()).hexdigest()[:12]
+        styled = table.style.set_properties(
+            subset=["foto", "produk", "berat"], **{"background-color": "#E6DEC6", "color": "#6B6F60"})
         edited = st.data_editor(
-            table, key=editor_key, hide_index=True,
-            width="stretch", row_height=54, column_order=["hapus", "foto", "produk", "jumlah", "berat"],
+            styled, key=editor_key, hide_index=True,
+            width="stretch", row_height=54, column_order=["hapus", "jumlah", "foto", "produk", "berat"],
             disabled=["foto", "produk", "berat"],
             column_config={
                 "hapus": st.column_config.ButtonColumn("", width=36, type="tertiary", help="Keluarkan produk",
                                                        on_click=remove_product, args=(chosen,), key="remove_click"),
                 "foto": st.column_config.ImageColumn("", width=50),
                 "produk": st.column_config.TextColumn("Produk", width=170 if MOBILE else 430),
-                "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=80,
+                "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=72,
                                                         alignment="center", help="Ketik jumlah unit yang dikirim"),
                 "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70, alignment="center"),
             })
         qty = {ir: 0 if pd.isna(n) else int(n) for ir, n in zip(edited["ir"], edited["jumlah"])}
-        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Klik ikon tempat sampah untuk mengeluarkan produk.</div>',
+        st.markdown('<div class="help">Ketik jumlah unit di kolom terang <b>Jumlah ✎</b>. Klik ikon tempat sampah untuk mengeluarkan produk.</div>',
                     unsafe_allow_html=True)
     else:
         st.markdown('<div class="empty slim">Cari produk di atas, lalu isi jumlahnya di tabel yang muncul.</div>',
