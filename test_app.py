@@ -1,4 +1,4 @@
-"""Headless end-to-end check: python test_app.py"""
+﻿"""Headless end-to-end check: python test_app.py"""
 import re
 
 from streamlit.testing.v1 import AppTest
@@ -22,7 +22,8 @@ def scenario(label: str, qty: dict, origin: str, dest: str):
         print("  ", re.sub(r"<[^>]+>", " | ", r).replace(" |  | ", " | ")[:170])
 
 
-scenario("MOP Canada x200", {"10101600": 200}, "Kota Dumai", "Bangkinang · Kab. Kampar")
-scenario("MOP Canada x2 (100 kg)", {"10101600": 2}, "Kota Dumai", "Bangkinang · Kab. Kampar")
-scenario("Bablass 1L x40", {"10300100": 40}, "Kota Pekanbaru", "Siak · Kab. Siak")
+scenario("MOP Canada x200", {"10101600": 200}, "Kota Dumai", "Kab. Kampar · Bangkinang")
+scenario("MOP Canada x2 (100 kg)", {"10101600": 2}, "Kota Dumai", "Kab. Kampar · Bangkinang")
+scenario("Bablass 1L x40", {"10300100": 40}, "Kota Pekanbaru", "Kab. Siak · Siak")
 scenario("MOP Canada x700", {"10101600": 700}, "Kota Dumai", "Kab. Batanghari · semua kecamatan")
+

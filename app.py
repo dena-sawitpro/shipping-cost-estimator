@@ -291,11 +291,11 @@ with left:
     for regency, g in from_origin.groupby("dest_regency"):
         districts = sorted(g["dest_district"].dropna().unique())
         for d in districts:
-            destinations[f"{d} · {regency}"] = (regency, d)
+            destinations[f"{regency} · {d}"] = (regency, d)
         if not districts:
             destinations[f"{regency} · semua kecamatan"] = (regency, REGENCY_LEVEL)
-    pick = c2.selectbox("Ke (kecamatan / kab)", sorted(destinations), index=None, disabled=origin is None,
-                        placeholder="Ketik kecamatan atau kabupaten", key="dest_pick")
+    pick = c2.selectbox("Ke (kab/kota · kecamatan)", sorted(destinations), index=None, disabled=origin is None,
+                        placeholder="Ketik kabupaten atau kecamatan", key="dest_pick")
     dest, district = destinations.get(pick, (None, None))
     to_dest = from_origin[from_origin["dest_regency"] == dest]
 
