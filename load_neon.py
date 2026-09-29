@@ -7,6 +7,7 @@ Usage:
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -25,12 +26,27 @@ def engine():
     return create_engine(url.replace("&channel_binding=require", "").replace("?channel_binding=require&", "?"))
 
 
+UNIT_KG = {"kg": 1, "gr": 0.001, "gram": 0.001, "g": 0.001, "liter": 1, "l": 1, "ml": 0.001}  # liquids at ~1 kg/L
+QTY = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kg|gram|gr|g|liter|l|ml)\b", re.I)
+
+
+def weight_from_name(name: str) -> float | None:
+    """Estimate unit weight from the package size in the product title; bundles ('20kg + ... 40kg') are summed."""
+    hits = QTY.findall(name)
+    return sum(float(n.replace(",", ".")) * UNIT_KG[u.lower()] for n, u in hits) if hits else None
+
+
 def products() -> pd.DataFrame:
     p = pd.read_excel(PRODUCTS)
     ir = p["Internal Reference"].astype(str).str.zfill(8)
+    name = p["Name"].str.strip()
+    odoo = p["Weight"].astype(float)
+    guess = name.map(weight_from_name)
+    missing = odoo.isna() | (odoo <= 0)
     return pd.DataFrame({
         "ir": ir, "ir_base": ir.str[:6], "category_code": ir.str[:3], "category": ir.str[:3].map(CATEGORY),
-        "name": p["Name"].str.strip(), "weight_kg": p["Weight"].astype(float),
+        "name": name, "weight_kg": odoo.where(~missing, guess),
+        "weight_source": pd.Series("odoo", index=p.index).where(~missing, guess.notna().map({True: "judul", False: None})),
         "sales_price": p["Sales Price"].astype(float), "tags": p["Tags"],
     })
 

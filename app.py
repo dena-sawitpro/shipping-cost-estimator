@@ -53,7 +53,8 @@ def engine():
 def load() -> tuple[pd.DataFrame, pd.DataFrame]:
     with engine().connect() as con:
         products = pd.read_sql(
-            "SELECT ir, name, category, weight_kg FROM products WHERE category_code <> '207' ORDER BY category, name",
+            "SELECT ir, name, category, weight_kg, weight_source FROM products "
+            "WHERE category_code <> '207' AND weight_kg > 0 ORDER BY category, name",
             con)
         rates = pd.read_sql(
             "SELECT logistic_vendor, origin_regency, dest_regency, dest_district, fleet, capacity_min_kg, "
@@ -211,14 +212,15 @@ with left:
                             key="chosen", label_visibility="collapsed")
     chosen = list(dict.fromkeys(chosen))
 
-    total_kg, missing = 0.0, []
+    total_kg = 0.0
     if chosen:
         cols = st.columns(2)
         for i, ir in enumerate(chosen):
             p = pmap.loc[ir]
             icon, color = CATEGORY_STYLE.get(p["category"], ("📦", "#66705F"))
             with cols[i % 2]:
-                weight = float(p["weight_kg"] or 0)
+                weight = float(p["weight_kg"])
+                est = " (estimasi dari nama)" if p["weight_source"] == "judul" else ""
                 src = thumb(ir)
                 pic = (f'<img class="ph" src="{src}" alt="">' if src
                        else f'<div class="ph ico" style="--c:{color}">{icon}</div>')
@@ -226,16 +228,10 @@ with left:
                     f'<div class="pcard" style="--c:{color}">{pic}<div class="pt">'
                     f'<span class="chip" style="--c:{color}">{icon} {p["category"]}</span>'
                     f'<div class="t">{html.escape(p["name"])}</div>'
-                    f'<div class="m">IR {ir} · {kg(weight) if weight else "berat belum ada di Odoo"} per unit</div></div></div>',
+                    f'<div class="m">IR {ir} · {kg(weight)} per unit{est}</div></div></div>',
                     unsafe_allow_html=True)
                 qty = st.number_input("Jumlah unit", min_value=0, value=1, step=1, key=f"q_{ir}")
-                if not weight:
-                    weight = st.number_input("Berat per unit (kg)", min_value=0.0, value=0.0, step=0.5, key=f"w_{ir}")
-                    if not weight:
-                        missing.append(p["name"])
                 total_kg += qty * weight
-    if missing:
-        st.caption("Isi berat per unit untuk: " + ", ".join(missing))
 
     # ---------- step 2: route ----------
 
