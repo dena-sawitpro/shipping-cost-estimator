@@ -4,6 +4,8 @@ primaryColor = "#426636"
 backgroundColor = "#F6F2E8"
 secondaryBackgroundColor = "#ECE5D3"
 textColor = "#16261D"
+borderColor = "#E0DAC6"
+dataframeHeaderBackgroundColor = "#E6EEDC"
 
 [server]
 headless = true
