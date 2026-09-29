@@ -232,12 +232,17 @@ def product_label(ir: str) -> str:
     return f"{CATEGORY_STYLE.get(pmap.at[ir, 'category'], ('📦',))[0]}  {pmap.at[ir, 'name']}"
 
 
-def drop_ticked(editor_key: str, irs: list[str]):
-    """Remove products ticked in the table's delete column; runs as a callback so the search box can be updated."""
-    edits = st.session_state[editor_key]["edited_rows"]
-    gone = {irs[int(i)] for i, change in edits.items() if change.get("hapus")}
-    if gone:
-        st.session_state["chosen"] = [ir for ir in st.session_state.get("chosen", []) if ir not in gone]
+def add_product():
+    ir = st.session_state.get("add")
+    if ir and ir not in st.session_state.setdefault("cart", []):
+        st.session_state["cart"].append(ir)
+    st.session_state["add"] = None
+
+
+def remove_product(irs: list[str]):
+    click = st.session_state.get("remove_click")
+    if click is not None:
+        st.session_state["cart"] = [ir for ir in st.session_state.get("cart", []) if ir != irs[click["row"]]]
 
 
 left, right = st.columns([1.5, 1], gap="large")
@@ -253,17 +258,16 @@ with left:
         st.pills("Kategori", CATEGORIES, format_func=lambda c: f"{CATEGORY_STYLE[c][0]} {c}", selection_mode="multi",
                  default=CATEGORIES, key="cats")
         st.caption("Semua kategori aktif secara default. Klik untuk menyaring.")
-    already = st.session_state.get("chosen", [])
-    pool = products[products["category"].isin(picked) | products["ir"].isin(already)]
-    chosen = c_search.multiselect("Cari produk", pool["ir"].tolist(), format_func=product_label, key="chosen",
-                                  placeholder="🔍  Cari & pilih produk…", label_visibility="collapsed")
-    chosen = list(dict.fromkeys(chosen))
+    chosen = [ir for ir in dict.fromkeys(st.session_state.get("cart", [])) if ir in pmap.index]
+    pool = products[products["category"].isin(picked) & ~products["ir"].isin(chosen)]
+    c_search.selectbox("Cari produk", pool["ir"].tolist(), format_func=product_label, index=None, key="add",
+                       on_change=add_product, placeholder="🔍  Cari & tambah produk…", label_visibility="collapsed")
     qty = {ir: st.session_state.get("qty", {}).get(ir, 1) for ir in chosen}
 
     if chosen:
         table = pd.DataFrame({
             "ir": chosen,
-            "hapus": False,
+            "hapus": "❌",
             "foto": [thumb(ir, pmap.at[ir, "category"]) for ir in chosen],
             "produk": [pmap.at[ir, "name"] for ir in chosen],
             "jumlah": [qty[ir] for ir in chosen],
@@ -271,11 +275,12 @@ with left:
         })
         editor_key = "ed_" + hashlib.md5(",".join(chosen).encode()).hexdigest()[:12]
         edited = st.data_editor(
-            table, key=editor_key, hide_index=True, on_change=drop_ticked, args=(editor_key, chosen),
+            table, key=editor_key, hide_index=True,
             width="stretch", row_height=54, column_order=["hapus", "foto", "produk", "jumlah", "berat"],
             disabled=["foto", "produk", "berat"],
             column_config={
-                "hapus": st.column_config.CheckboxColumn("🗑", width=40, help="Centang untuk mengeluarkan produk"),
+                "hapus": st.column_config.ButtonColumn("", width=44, type="tertiary", help="Keluarkan produk",
+                                                       on_click=remove_product, args=(chosen,), key="remove_click"),
                 "foto": st.column_config.ImageColumn("", width=50),
                 "produk": st.column_config.TextColumn("Produk", width=170),
                 "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=80,
@@ -283,7 +288,7 @@ with left:
                 "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70),
             })
         qty = {ir: 0 if pd.isna(n) else int(n) for ir, n in zip(edited["ir"], edited["jumlah"])}
-        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Centang 🗑 untuk mengeluarkan produk.</div>',
+        st.markdown('<div class="help">Ketik jumlah unit di kolom <b>Jumlah</b>. Klik ❌ untuk mengeluarkan produk.</div>',
                     unsafe_allow_html=True)
     else:
         st.markdown('<div class="empty slim">Cari produk di atas, lalu isi jumlahnya di tabel yang muncul.</div>',

@@ -6,7 +6,7 @@ from streamlit.testing.v1 import AppTest
 
 def scenario(label: str, qty: dict, origin: str, dest: str):
     at = AppTest.from_file("app.py", default_timeout=60)
-    at.session_state["chosen"] = list(qty)
+    at.session_state["cart"] = list(qty)
     at.session_state["qty"] = dict(qty)
     at.run()
     at.selectbox(key="origin").select(origin).run()
