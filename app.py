@@ -66,6 +66,12 @@ def logo_b64() -> str:
     return base64.b64encode(LOGO.read_bytes()).decode()
 
 
+@st.cache_data
+def thumb(ir: str) -> str | None:
+    path = LOGO.parent / "products" / f"{ir}.webp"
+    return "data:image/webp;base64," + base64.b64encode(path.read_bytes()).decode() if path.exists() else None
+
+
 def options(route: pd.DataFrame, total_kg: float) -> pd.DataFrame:
     """Cost of every vendor x fleet option for the shipment; trucks are repeated when the load exceeds capacity."""
     cap = route["capacity_max_kg"].astype(float)
@@ -101,7 +107,10 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .step{display:flex;align-items:center;gap:.6rem;margin:1.5rem 0 .55rem;}
 .step b{display:inline-grid;place-items:center;width:1.65rem;height:1.65rem;border-radius:50%;background:var(--palm);color:var(--sun);font-size:.8rem;}
 .step span{font-family:'Fraunces',Georgia,serif;font-size:1.3rem;color:var(--ink);}
-.pcard{background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:.65rem .8rem .55rem;}
+.pcard{display:flex;gap:.75rem;align-items:center;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:.6rem .75rem;}
+.pcard .ph{width:64px;height:64px;flex:none;border-radius:10px;border:1px solid var(--line);background:#fff;object-fit:contain;}
+.pcard .ph.ico{display:grid;place-items:center;font-size:1.7rem;background:color-mix(in srgb,var(--c) 10%,#fff);}
+.pcard .pt{min-width:0;}
 .pcard .t{font-weight:600;font-size:.9rem;color:var(--ink);line-height:1.25;margin-top:.3rem;}
 .pcard .m{font-size:.74rem;color:var(--muted);margin-top:.15rem;}
 .chip{display:inline-block;padding:.08rem .5rem;border-radius:99px;font-size:.68rem;font-weight:600;color:#fff;background:var(--c);}
@@ -210,10 +219,14 @@ with left:
             icon, color = CATEGORY_STYLE.get(p["category"], ("📦", "#66705F"))
             with cols[i % 2]:
                 weight = float(p["weight_kg"] or 0)
+                src = thumb(ir)
+                pic = (f'<img class="ph" src="{src}" alt="">' if src
+                       else f'<div class="ph ico" style="--c:{color}">{icon}</div>')
                 st.markdown(
-                    f'<div class="pcard" style="--c:{color}"><span class="chip" style="--c:{color}">{icon} {p["category"]}</span>'
+                    f'<div class="pcard" style="--c:{color}">{pic}<div class="pt">'
+                    f'<span class="chip" style="--c:{color}">{icon} {p["category"]}</span>'
                     f'<div class="t">{html.escape(p["name"])}</div>'
-                    f'<div class="m">IR {ir} · {kg(weight) if weight else "berat belum ada di Odoo"} per unit</div></div>',
+                    f'<div class="m">IR {ir} · {kg(weight) if weight else "berat belum ada di Odoo"} per unit</div></div></div>',
                     unsafe_allow_html=True)
                 qty = st.number_input("Jumlah unit", min_value=0, value=1, step=1, key=f"q_{ir}")
                 if not weight:
