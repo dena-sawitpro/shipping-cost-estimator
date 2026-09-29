@@ -1,4 +1,4 @@
-"""SawitPRO Shipping Cost Calculator: pick products, origin and destination; get the cheapest vendor x fleet option."""
+"""SawitPRO Shipping Cost Estimator: pick products, origin and destination; get the cheapest vendor x fleet option."""
 from __future__ import annotations
 
 import html
@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import create_engine
 
-st.set_page_config(page_title="Shipping Cost Calculator · SawitPRO", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Shipping Cost Estimator · SawitPRO", page_icon="🚚", layout="wide")
 
 CATEGORY_STYLE = {  # icon, accent colour
     "Pupuk": ("🌾", "#B7892F"),
@@ -120,8 +120,8 @@ table.alt td.r{text-align:right;font-variant-numeric:tabular-nums;white-space:no
 st.markdown("""
 <div class="hero">
   <div class="eyebrow">SawitPRO · Logistik</div>
-  <h1>Shipping Cost Calculator</h1>
-  <p>Pilih produk, tentukan asal dan tujuan. Kalkulator menghitung total berat, mencari armada yang sesuai,
+  <h1>Shipping Cost Estimator</h1>
+  <p>Pilih produk, tentukan asal dan tujuan. Estimator menghitung total berat, mencari armada yang sesuai,
   lalu membandingkan tarif per trip dan per kg dari semua vendor.</p>
 </div>
 """, unsafe_allow_html=True)
