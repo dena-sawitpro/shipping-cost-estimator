@@ -154,7 +154,16 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .route-arrow{display:grid;place-items:center;width:30px;height:30px;margin:0 auto 8px;border-radius:50%;background:var(--leaf);
   color:var(--palm);font-weight:700;border:1px solid #C9D6B8;}
 .route-meta{font-size:.74rem;color:var(--muted);}
-@media (min-width:641px){.st-key-route [data-testid="stColumn"]:nth-child(2){flex:0 0 30px !important;min-width:30px !important;}}
+.st-key-route{container-type:inline-size;}
+.st-key-route [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;}
+.st-key-route [data-testid="stColumn"]{min-width:0 !important;}
+.st-key-route [data-testid="stColumn"]:nth-child(odd){flex:1 1 0 !important;}
+.st-key-route [data-testid="stColumn"]:nth-child(2){flex:0 0 30px !important;min-width:30px !important;}
+@container (max-width:520px){
+  .st-key-route [data-testid="stHorizontalBlock"]{flex-direction:column !important;align-items:stretch !important;gap:.4rem;}
+  .st-key-route [data-testid="stColumn"],.st-key-route [data-testid="stColumn"]:nth-child(odd),
+  .st-key-route [data-testid="stColumn"]:nth-child(2){width:100% !important;flex:0 0 auto !important;}
+  .route-arrow{transform:rotate(90deg);margin:0 auto;width:26px;height:26px;}}
 .st-key-cart{gap:.5rem;margin-top:.2rem;}
 [class*="st-key-line_"]{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:.5rem .6rem .5rem .5rem;
   box-shadow:0 10px 24px -22px rgba(30,46,26,.6);transition:border-color .15s;}
@@ -240,7 +249,6 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   .step span{font-size:1.15rem;}
   .total .v{font-size:1.35rem;}
   .waybill .price{font-size:1.9rem;}
-  .route-arrow{transform:rotate(90deg);margin:0 auto;width:26px;height:26px;}
   [class*="st-key-line_"] [data-testid="stHorizontalBlock"]{gap:.5rem;}
   [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 28px !important;}
   [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:0 0 124px !important;}
