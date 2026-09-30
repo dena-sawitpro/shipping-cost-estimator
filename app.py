@@ -354,7 +354,7 @@ with left:
     step(2, "Tentukan rute")
     with st.container(key="route"):
         c1, c_arrow, c2 = st.columns([10, 1, 10], vertical_alignment="bottom", gap="small")
-        origin = c1.selectbox(":material/warehouse: Asal · kab/kota", sorted(rates["origin_regency"].dropna().unique()),
+        origin = c1.selectbox(":material/warehouse: Asal · kab/kota", sorted(rates["origin_regency"].dropna().unique(), reverse=True),
                               index=None, placeholder="Pilih kota asal", key="origin")
         c_arrow.markdown('<div class="route-arrow">→</div>', unsafe_allow_html=True)
         from_origin = rates[rates["origin_regency"] == origin]
