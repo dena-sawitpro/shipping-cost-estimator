@@ -232,6 +232,7 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
 .foot{margin-top:1.25rem;padding:.9rem 1rem;border-radius:var(--radius);text-align:center;font-size:.8rem;
   color:#E6EEDC;background:linear-gradient(135deg,var(--palm) 0%,var(--palm-deep) 100%);}
 .foot b{color:#fff;font-weight:600;}
+.foot .sep{margin:0 .5rem;opacity:.6;}
 @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){.waybill{animation:none;}}
 @media (max-width:900px){.st-key-summary{position:static;}}
@@ -477,5 +478,6 @@ if not opts.empty:
                         + rows + "</tbody></table></div>", unsafe_allow_html=True)
 
 st.markdown('<div class="note">Estimasi belum termasuk biaya inap atau multi drop.</div>'
-            '<div class="foot">Dibuat &amp; dikelola oleh <b>Business Intelligence Commercial</b> · SawitPRO</div>',
+            '<div class="foot">Built &amp; maintained by <b>Business Intelligence Commercial</b>'
+            '<span class="sep">·</span>SawitPRO © 2026</div>',
             unsafe_allow_html=True)
