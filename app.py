@@ -147,13 +147,13 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 [data-testid="stPopover"] button{background:#fff;border:1px solid var(--line);border-radius:12px;min-height:46px;color:var(--ink);
   box-shadow:0 1px 2px rgba(30,46,26,.04),0 6px 16px -12px rgba(30,46,26,.35);}
 [data-testid="stPopover"] button:hover{border-color:#B9C9A6;color:var(--palm);}
-.st-key-route{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem .8rem;
-  box-shadow:0 14px 30px -26px rgba(30,46,26,.6);gap:.5rem;}
+.st-key-route{gap:.45rem;}
+.st-key-route [data-testid="stMarkdownContainer"]{margin-bottom:0 !important;}
 .st-key-route label p{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;}
 .st-key-route label [data-testid="stIconMaterial"]{color:var(--palm);font-size:1rem;}
-.route-arrow{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 6px;border-radius:50%;background:var(--palm);
-  color:var(--sun);font-weight:700;box-shadow:0 6px 14px -8px rgba(30,46,26,.7);}
-.route-meta{font-size:.74rem;color:var(--muted);padding-top:.1rem;}
+.route-arrow{display:grid;place-items:center;width:30px;height:30px;margin:0 auto 8px;border-radius:50%;background:var(--leaf);
+  color:var(--palm);font-weight:700;border:1px solid #C9D6B8;}
+.route-meta{font-size:.74rem;color:var(--muted);}
 .st-key-cart{gap:.5rem;margin-top:.2rem;}
 [class*="st-key-line_"]{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:.5rem .6rem .5rem .5rem;
   box-shadow:0 10px 24px -22px rgba(30,46,26,.6);transition:border-color .15s;}
@@ -218,8 +218,10 @@ table.alt tr.best td{background:var(--sun-soft) !important;font-weight:600;}
 table.alt tr.best td:first-child{box-shadow:inset 4px 0 0 var(--sun);}
 table.alt td.r,table.alt th.r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
 table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--muted);margin-top:.1rem;}
-.tag{display:inline-block;font-size:.68rem;padding:.06rem .45rem;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;margin:.1rem .15rem 0 0;}
-.tag.fit{border-color:var(--palm);color:var(--palm);background:var(--leaf);}
+.tags{display:flex;flex-direction:column;align-items:flex-start;gap:.3rem;color:var(--muted);}
+.tag{display:inline-block;font-size:.68rem;line-height:1.35;padding:.12rem .55rem;border-radius:99px;border:1px solid var(--line);
+  color:var(--muted);white-space:nowrap;}
+.tag.fit{border-color:#C9D6B8;color:var(--palm);background:var(--leaf);}
 .tag.join{border-color:var(--alert);color:#fff;background:var(--alert);font-weight:600;}
 [data-testid="stExpander"] details{background:var(--paper);border:1px solid var(--line);border-radius:14px;}
 .foot{margin-top:1rem;font-size:.75rem;color:var(--muted);}
@@ -237,8 +239,7 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   .step span{font-size:1.15rem;}
   .total .v{font-size:1.35rem;}
   .waybill .price{font-size:1.9rem;}
-  .route-arrow{transform:rotate(90deg);margin:.1rem auto 0;width:28px;height:28px;}
-  .st-key-route{padding:.85rem .85rem .7rem;}
+  .route-arrow{transform:rotate(90deg);margin:0 auto;width:26px;height:26px;}
   [class*="st-key-line_"] [data-testid="stHorizontalBlock"]{gap:.5rem;}
   [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 28px !important;}
   [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:0 0 124px !important;}
@@ -255,6 +256,7 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   table.alt td{border:none;padding:.22rem .8rem;display:flex;justify-content:space-between;gap:1rem;}
   table.alt td:before{content:attr(data-l);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-top:.15rem;}
   table.alt td>span{text-align:right;}
+  .tags{align-items:flex-end;}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -443,10 +445,10 @@ if not opts.empty:
                 f'<td data-l="Tarif" class="r">{tariff(o)}</td>'
                 f'<td data-l="Estimasi" class="r"><span>{rp(o["estimate"])}<small>+ muat {rp(o["estimate"] + loading_fee)}</small></span></td>'
                 f'<td data-l="Sewa penuh" class="r"><span>{charter}</span></td>'
-                f'<td data-l="Info"><span>{tags}</span></td></tr>')
+                f'<td data-l="Catatan"><span class="tags">{tags or "—"}</span></td></tr>')
         step(4, f"Semua opsi ({len(eligible)})")
         st.markdown('<table class="alt"><thead><tr><th>Vendor</th><th>Armada · kapasitas</th><th class="r">Tarif</th>'
-                    '<th class="r">Estimasi</th><th class="r">Sewa penuh</th><th></th></tr></thead><tbody>'
+                    '<th class="r">Estimasi</th><th class="r">Sewa penuh</th><th>Catatan</th></tr></thead><tbody>'
                     + "".join(rows) + "</tbody></table>", unsafe_allow_html=True)
         st.markdown(f'<div class="fine">*Join route = tarif per trip ÷ kapasitas maksimum × berat kiriman (muatan digabung '
                     f'dengan kiriman lain). "+ muat" menambahkan potensi biaya muat {rp(LOADING_FEE_PER_TON)} per ton '
