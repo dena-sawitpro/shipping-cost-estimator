@@ -229,6 +229,8 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
 .tag.join{border-color:var(--alert);color:#fff;background:var(--alert);font-weight:600;}
 [data-testid="stExpander"] details{background:var(--paper);border:1px solid var(--line);border-radius:14px;}
 .foot{margin-top:1rem;font-size:.75rem;color:var(--muted);}
+.foot .credit{margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--line);}
+.foot .credit b{color:var(--palm);font-weight:600;}
 @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion:reduce){.waybill{animation:none;}}
 @media (max-width:900px){.st-key-summary{position:static;}}
@@ -474,4 +476,6 @@ if not opts.empty:
                         + rows + "</tbody></table></div>", unsafe_allow_html=True)
 
 st.markdown('<div class="foot">Sumber: Master Tarif Logistik (PKS + ODOO Current Vendor Cost), 29 Sep 2026. '
-            'Estimasi belum termasuk biaya inap atau multi drop.</div>', unsafe_allow_html=True)
+            'Estimasi belum termasuk biaya inap atau multi drop.'
+            '<div class="credit">Dibuat &amp; dikelola oleh <b>Business Intelligence Commercial</b> · SawitPRO</div>'
+            '</div>', unsafe_allow_html=True)
