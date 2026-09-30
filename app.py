@@ -141,11 +141,12 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 [class*="st-key-line_"]:hover{border-color:#C9D6B8;}
 [class*="st-key-line_"] [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;gap:.7rem;align-items:center;}
 [class*="st-key-line_"] [data-testid="stColumn"]{min-width:0 !important;width:auto !important;}
-[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 48px !important;}
-[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:1 1 auto !important;}
-[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(3){flex:0 0 132px !important;}
-[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(4){flex:0 0 34px !important;}
-.pthumb{display:block;width:48px;height:48px;border-radius:10px;object-fit:cover;background:#fff;border:1px solid #EEE8D6;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 34px !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:0 0 132px !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(3){flex:0 0 60px !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(4){flex:1 1 auto !important;}
+.pthumb{display:block;width:60px;height:60px;padding:4px;box-sizing:border-box;border-radius:12px;object-fit:contain;
+  background:#fff;border:1px solid #EEE8D6;box-shadow:0 4px 10px -6px rgba(30,46,26,.35);}
 .pname{font-size:.9rem;font-weight:600;color:var(--ink);line-height:1.25;overflow:hidden;display:-webkit-box;
   -webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .pmeta{font-size:.74rem;color:var(--muted);margin-top:.15rem;font-variant-numeric:tabular-nums;}
@@ -217,10 +218,11 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   .total .v{font-size:1.35rem;}
   .waybill .price{font-size:1.9rem;}
   [class*="st-key-line_"] [data-testid="stHorizontalBlock"]{gap:.5rem;}
-  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 40px !important;}
-  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(3){flex:0 0 124px !important;}
+  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 28px !important;}
+  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:0 0 124px !important;}
+  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(3){flex:0 0 46px !important;}
   [class*="st-key-q_"] button{width:1.7rem;}
-  .pthumb{width:40px;height:40px;}
+  .pthumb{width:46px;height:46px;padding:3px;border-radius:10px;}
   .pname{font-size:.84rem;}
   table.alt thead{display:none;}
   table.alt,table.alt tbody,table.alt tr,table.alt td{display:block;width:100%;}
@@ -296,7 +298,7 @@ with left:
                 st.session_state.setdefault(f"q_{ir}", saved.get(ir, 1))
                 unit_kg = float(pmap.at[ir, "weight_kg"])
                 with st.container(key=f"line_{ir}"):
-                    c_img, c_name, c_qty, c_del = st.columns([1, 6, 3, 1], vertical_alignment="center", gap="small")
+                    c_del, c_qty, c_img, c_name = st.columns([1, 3, 1, 6], vertical_alignment="center", gap="small")
                     c_img.markdown(f'<img class="pthumb" src="{thumb(ir, pmap.at[ir, "category"])}" alt="">',
                                    unsafe_allow_html=True)
                     n = c_qty.number_input("Jumlah", min_value=0, step=1, key=f"q_{ir}", label_visibility="collapsed")
