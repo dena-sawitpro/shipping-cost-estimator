@@ -28,6 +28,7 @@ FLEET_LABEL = {"PU_BV": "Pick-up / L300", "CDE": "CDE", "CDD": "CDD", "FUSO": "F
                "CARGO": "Cargo", "CUSTOM": "Tanpa jenis truk"}
 REGENCY_LEVEL = "Semua kecamatan (tarif tingkat kab/kota)"
 LOADING_FEE_PER_TON = 35_000
+SCROLL_HINT = '<div class="scroll-hint">Geser tabel ke kanan untuk melihat semua kolom →</div>'
 
 def rp(x: float) -> str:
     return "Rp " + f"{x:,.0f}".replace(",", ".")
@@ -208,8 +209,10 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .empty.slim{margin-top:.6rem;padding:1rem;font-size:.85rem;}
 .help{margin-top:.5rem;}
 .empty b{display:block;font-family:'Fraunces',Georgia,serif;font-size:1.1rem;color:var(--ink);margin-bottom:.25rem;}
-table.alt{width:100%;border-collapse:separate;border-spacing:0;font-size:.88rem;background:var(--paper);border:1px solid var(--line);
-  border-radius:var(--radius);overflow:hidden;box-shadow:0 14px 30px -24px rgba(30,46,26,.6);}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:0 14px 30px -24px rgba(30,46,26,.6);background:var(--paper);}
+.scroll-hint{display:none;font-size:.7rem;color:var(--muted);text-align:right;margin:-.2rem 0 .3rem;}
+table.alt{width:100%;border-collapse:separate;border-spacing:0;font-size:.88rem;background:var(--paper);}
 table.alt th{text-align:left;font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:#EAF0E0;font-weight:600;
   padding:.75rem .85rem;background:var(--palm);}
 table.alt td{padding:.65rem .85rem;border-bottom:1px solid #EEE8D6;color:var(--ink);vertical-align:middle;}
@@ -247,16 +250,14 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   [class*="st-key-q_"] button{width:1.7rem;}
   .pthumb{width:46px;height:46px;padding:3px;border-radius:10px;}
   .pname{font-size:.84rem;}
-  table.alt thead{display:none;}
-  table.alt,table.alt tbody,table.alt tr,table.alt td{display:block;width:100%;}
-  table.alt{border:none;background:transparent;box-shadow:none;}
-  table.alt tr{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin-bottom:.6rem;padding:.5rem .2rem;}
-  table.alt tr.best{border-color:var(--sun);background:var(--sun-soft);}
-  table.alt tbody tr td,table.alt tr.best td{background:transparent !important;box-shadow:none !important;}
-  table.alt td{border:none;padding:.22rem .8rem;display:flex;justify-content:space-between;gap:1rem;}
-  table.alt td:before{content:attr(data-l);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;padding-top:.15rem;}
-  table.alt td>span{text-align:right;}
-  .tags{align-items:flex-end;}
+  .scroll-hint{display:block;}
+  table.alt{min-width:560px;font-size:.78rem;}
+  table.alt th{padding:.6rem .6rem;font-size:.6rem;letter-spacing:.1em;}
+  table.alt td{padding:.55rem .6rem;}
+  table.alt th:first-child,table.alt td:first-child{position:sticky;left:0;z-index:1;max-width:118px;
+    box-shadow:inset -1px 0 0 var(--line);}
+  table.alt td:first-child{background:var(--paper);}
+  table.alt tr.best td:first-child{box-shadow:inset 4px 0 0 var(--sun),inset -1px 0 0 var(--line);}
 }
 </style>
 """, unsafe_allow_html=True)
@@ -302,13 +303,17 @@ left, right = st.columns([1.5, 1], gap="large")
 
 with left:
     step(1, "Pilih produk")
-    picked = st.session_state.get("cats") or CATEGORIES
+    selected = st.session_state.get("cats") or []
+    picked = selected or CATEGORIES
+    filter_label = ("Semua kategori" if not selected else selected[0] if len(selected) == 1
+                    else f"{len(selected)} kategori")
     c_filter, c_search = st.columns([1, 2.8], vertical_alignment="bottom")
-    with c_filter.popover("Semua kategori" if len(picked) == len(CATEGORIES) else f"{len(picked)} kategori",
-                          icon=":material/filter_list:", width="stretch"):
+    with c_filter.popover(filter_label, icon=":material/filter_list:", width="stretch"):
         st.pills("Kategori", CATEGORIES, format_func=lambda c: f"{CATEGORY_STYLE[c][0]} {c}", selection_mode="multi",
-                 default=CATEGORIES, key="cats")
-        st.caption("Semua kategori aktif secara default. Klik untuk menyaring.")
+                 key="cats")
+        st.caption("Awalnya semua kategori tampil. Klik satu atau beberapa kategori untuk menyaring.")
+        st.button("Tampilkan semua", icon=":material/restart_alt:", type="tertiary", disabled=not selected,
+                  on_click=lambda: st.session_state.update(cats=[]))
     chosen = [ir for ir in dict.fromkeys(st.session_state.get("cart", [])) if ir in pmap.index]
     pool = products[products["category"].isin(picked) & ~products["ir"].isin(chosen)]
     c_search.selectbox("Cari produk", pool["ir"].tolist(), format_func=product_label, index=None, key="add",
@@ -445,9 +450,10 @@ if not opts.empty:
                 f'<td data-l="Sewa penuh" class="r"><span>{charter}</span></td>'
                 f'<td data-l="Catatan"><span class="tags">{tags or "—"}</span></td></tr>')
         step(4, f"Semua opsi ({len(eligible)})")
-        st.markdown('<table class="alt"><thead><tr><th>Vendor</th><th>Armada · kapasitas</th><th class="r">Tarif</th>'
-                    '<th class="r">Estimasi</th><th class="r">Sewa penuh</th><th>Catatan</th></tr></thead><tbody>'
-                    + "".join(rows) + "</tbody></table>", unsafe_allow_html=True)
+        st.markdown(SCROLL_HINT + '<div class="tscroll"><table class="alt"><thead><tr><th>Vendor</th>'
+                    '<th>Armada · kapasitas</th><th class="r">Tarif</th><th class="r">Estimasi</th>'
+                    '<th class="r">Sewa penuh</th><th>Catatan</th></tr></thead><tbody>'
+                    + "".join(rows) + "</tbody></table></div>", unsafe_allow_html=True)
         st.markdown(f'<div class="fine">*Join route = tarif per trip ÷ kapasitas maksimum × berat kiriman (muatan digabung '
                     f'dengan kiriman lain). "+ muat" menambahkan potensi biaya muat {rp(LOADING_FEE_PER_TON)} per ton '
                     f'(dibulatkan ke atas).</div>', unsafe_allow_html=True)
@@ -462,9 +468,10 @@ if not opts.empty:
                 f'<td data-l="Min. muatan" class="r"><span>{num(o["lo"])} kg<small>kurang {kg(o["lo"] - total_kg)}</small></span></td>'
                 f'<td data-l="Biaya minimum" class="r">{rp(o["minimum"])}</td></tr>'
                 for _, o in below.iterrows())
-            st.markdown('<table class="alt"><thead><tr><th>Vendor</th><th>Armada · kapasitas</th><th class="r">Tarif</th>'
-                        '<th class="r">Min. muatan</th><th class="r">Biaya minimum</th></tr></thead><tbody>'
-                        + rows + "</tbody></table>", unsafe_allow_html=True)
+            st.markdown(SCROLL_HINT + '<div class="tscroll"><table class="alt"><thead><tr><th>Vendor</th>'
+                        '<th>Armada · kapasitas</th><th class="r">Tarif</th><th class="r">Min. muatan</th>'
+                        '<th class="r">Biaya minimum</th></tr></thead><tbody>'
+                        + rows + "</tbody></table></div>", unsafe_allow_html=True)
 
 st.markdown('<div class="foot">Sumber: Master Tarif Logistik (PKS + ODOO Current Vendor Cost), 29 Sep 2026. '
             'Estimasi belum termasuk biaya inap atau multi drop.</div>', unsafe_allow_html=True)

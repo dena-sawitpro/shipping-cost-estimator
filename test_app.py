@@ -43,3 +43,13 @@ assert at.session_state["cart"] == ["10300100"] and total_kg(at) == "1 kg", tota
 assert not at.exception, at.exception
 print("\nstepper + delete: ok")
 
+at = AppTest.from_file("app.py", default_timeout=60).run()
+everything = len(at.selectbox(key="add").options)
+at.session_state["cats"] = ["Herbisida"]
+at.run()
+herbicides = len(at.selectbox(key="add").options)
+at.session_state["cats"] = []
+at.run()
+assert 0 < herbicides < everything == len(at.selectbox(key="add").options), (herbicides, everything)
+print(f"category filter: all {everything} -> Herbisida {herbicides} -> reset {everything}: ok")
+
