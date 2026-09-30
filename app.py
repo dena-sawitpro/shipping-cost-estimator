@@ -147,23 +147,14 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 [data-testid="stPopover"] button{background:#fff;border:1px solid var(--line);border-radius:12px;min-height:46px;color:var(--ink);
   box-shadow:0 1px 2px rgba(30,46,26,.04),0 6px 16px -12px rgba(30,46,26,.35);}
 [data-testid="stPopover"] button:hover{border-color:#B9C9A6;color:var(--palm);}
-.st-key-route{gap:.45rem;}
+.st-key-route{gap:.7rem;}
 .st-key-route [data-testid="stMarkdownContainer"]{margin-bottom:0 !important;}
 .st-key-route label p{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;}
-.st-key-route label [data-testid="stIconMaterial"]{color:var(--palm);font-size:1rem;}
-.route-arrow{display:grid;place-items:center;width:30px;height:30px;margin:0 auto 8px;border-radius:50%;background:var(--leaf);
-  color:var(--palm);font-weight:700;border:1px solid #C9D6B8;}
-.route-meta{font-size:.74rem;color:var(--muted);}
-.st-key-route{container-type:inline-size;}
-.st-key-route [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;}
-.st-key-route [data-testid="stColumn"]{min-width:0 !important;}
-.st-key-route [data-testid="stColumn"]:nth-child(odd){flex:1 1 0 !important;}
-.st-key-route [data-testid="stColumn"]:nth-child(2){flex:0 0 30px !important;min-width:30px !important;}
-@container (max-width:520px){
-  .st-key-route [data-testid="stHorizontalBlock"]{flex-direction:column !important;align-items:stretch !important;gap:.4rem;}
-  .st-key-route [data-testid="stColumn"],.st-key-route [data-testid="stColumn"]:nth-child(odd),
-  .st-key-route [data-testid="stColumn"]:nth-child(2){width:100% !important;flex:0 0 auto !important;}
-  .route-arrow{transform:rotate(90deg);margin:0 auto;width:26px;height:26px;}}
+.st-key-origin div:has(>input),.st-key-dest_pick div:has(>input){padding-left:2.7rem;background-repeat:no-repeat;
+  background-position:.85rem center;background-size:21px;}
+.st-key-origin div:has(>input){background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23426636' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 21V8.5L12 3l9 5.5V21'/%3E%3Cpath d='M7 21v-8h10v8'/%3E%3Cpath d='M7 17h10'/%3E%3C/svg%3E");}
+.st-key-dest_pick div:has(>input){background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23426636' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21s-7-6.2-7-11.2a7 7 0 0 1 14 0C19 14.8 12 21 12 21z'/%3E%3Ccircle cx='12' cy='9.8' r='2.6'/%3E%3C/svg%3E");}
+.route-meta{font-size:.74rem;color:var(--muted);margin-top:-.2rem;}
 .st-key-cart{gap:.5rem;margin-top:.2rem;}
 [class*="st-key-line_"]{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:.5rem .6rem .5rem .5rem;
   box-shadow:0 10px 24px -22px rgba(30,46,26,.6);transition:border-color .15s;}
@@ -353,10 +344,8 @@ with left:
 
     step(2, "Tentukan rute")
     with st.container(key="route"):
-        c1, c_arrow, c2 = st.columns([10, 1, 10], vertical_alignment="bottom", gap="small")
-        origin = c1.selectbox(":material/warehouse: Asal · kab/kota", sorted(rates["origin_regency"].dropna().unique(), reverse=True),
+        origin = st.selectbox("Asal · kab/kota", sorted(rates["origin_regency"].dropna().unique(), reverse=True),
                               index=None, placeholder="Pilih kota asal", key="origin")
-        c_arrow.markdown('<div class="route-arrow">→</div>', unsafe_allow_html=True)
         from_origin = rates[rates["origin_regency"] == origin]
         destinations = {}
         for regency, g in from_origin.groupby("dest_regency"):
@@ -365,7 +354,7 @@ with left:
                 destinations[f"{regency} · {d}"] = (regency, d)
             if not districts:
                 destinations[f"{regency} · semua kecamatan"] = (regency, REGENCY_LEVEL)
-        pick = c2.selectbox(":material/location_on: Tujuan · kab/kota & kecamatan", sorted(destinations), index=None,
+        pick = st.selectbox("Tujuan · kab/kota & kecamatan", sorted(destinations), index=None,
                             disabled=origin is None, placeholder="Ketik kabupaten atau kecamatan", key="dest_pick")
         dest, district = destinations.get(pick, (None, None))
         to_dest = from_origin[from_origin["dest_regency"] == dest]
