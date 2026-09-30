@@ -135,6 +135,25 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .step b{display:inline-grid;place-items:center;width:1.65rem;height:1.65rem;border-radius:50%;background:var(--palm);color:var(--sun);font-size:.8rem;}
 .step span{font-family:'Fraunces',Georgia,serif;font-size:1.3rem;color:var(--ink);}
 .help{font-size:.78rem;color:var(--muted);margin:-.2rem 0 .5rem;}
+.st-key-add div:has(>input),.st-key-origin div:has(>input),.st-key-dest_pick div:has(>input){
+  background:#fff;border:1px solid var(--line);border-radius:12px;min-height:46px;
+  box-shadow:0 1px 2px rgba(30,46,26,.04),0 6px 16px -12px rgba(30,46,26,.35);transition:border-color .15s,box-shadow .15s;}
+.st-key-add div:has(>input):hover,.st-key-origin div:has(>input):hover,.st-key-dest_pick div:has(>input):hover{border-color:#B9C9A6;}
+.st-key-add div:has(>input):focus-within,.st-key-origin div:has(>input):focus-within,
+.st-key-dest_pick div:has(>input):focus-within{border-color:var(--palm);box-shadow:0 0 0 3px rgba(66,102,54,.14);}
+.st-key-add input::placeholder,.st-key-origin input::placeholder,.st-key-dest_pick input::placeholder{color:#8B917F;}
+.st-key-add div:has(>input){padding-left:2.3rem;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23426636' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E") no-repeat .85rem center/17px;}
+.st-key-dest_pick div:has(>input:disabled){background:#FAF8F2;box-shadow:none;}
+[data-testid="stPopover"] button{background:#fff;border:1px solid var(--line);border-radius:12px;min-height:46px;color:var(--ink);
+  box-shadow:0 1px 2px rgba(30,46,26,.04),0 6px 16px -12px rgba(30,46,26,.35);}
+[data-testid="stPopover"] button:hover{border-color:#B9C9A6;color:var(--palm);}
+.st-key-route{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.1rem .8rem;
+  box-shadow:0 14px 30px -26px rgba(30,46,26,.6);gap:.5rem;}
+.st-key-route label p{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+.st-key-route label [data-testid="stIconMaterial"]{color:var(--palm);font-size:1rem;}
+.route-arrow{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 6px;border-radius:50%;background:var(--palm);
+  color:var(--sun);font-weight:700;box-shadow:0 6px 14px -8px rgba(30,46,26,.7);}
+.route-meta{font-size:.74rem;color:var(--muted);padding-top:.1rem;}
 .st-key-cart{gap:.5rem;margin-top:.2rem;}
 [class*="st-key-line_"]{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:.5rem .6rem .5rem .5rem;
   box-shadow:0 10px 24px -22px rgba(30,46,26,.6);transition:border-color .15s;}
@@ -218,6 +237,8 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   .step span{font-size:1.15rem;}
   .total .v{font-size:1.35rem;}
   .waybill .price{font-size:1.9rem;}
+  .route-arrow{transform:rotate(90deg);margin:.1rem auto 0;width:28px;height:28px;}
+  .st-key-route{padding:.85rem .85rem .7rem;}
   [class*="st-key-line_"] [data-testid="stHorizontalBlock"]{gap:.5rem;}
   [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 28px !important;}
   [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:0 0 124px !important;}
@@ -289,7 +310,7 @@ with left:
     chosen = [ir for ir in dict.fromkeys(st.session_state.get("cart", [])) if ir in pmap.index]
     pool = products[products["category"].isin(picked) & ~products["ir"].isin(chosen)]
     c_search.selectbox("Cari produk", pool["ir"].tolist(), format_func=product_label, index=None, key="add",
-                       on_change=add_product, placeholder="🔍  Cari & tambah produk…", label_visibility="collapsed")
+                       on_change=add_product, placeholder="Cari & tambah produk…", label_visibility="collapsed")
     saved = st.session_state.get("qty", {})
     qty = {}
 
@@ -320,21 +341,29 @@ with left:
     # ---------- step 2: route ----------
 
     step(2, "Tentukan rute")
-    c1, c2 = st.columns(2)
-    origin = c1.selectbox("Dari (kab/kota)", sorted(rates["origin_regency"].dropna().unique()), index=None,
-                          placeholder="Pilih kota asal", key="origin")
-    from_origin = rates[rates["origin_regency"] == origin]
-    destinations = {}
-    for regency, g in from_origin.groupby("dest_regency"):
-        districts = sorted(g["dest_district"].dropna().unique())
-        for d in districts:
-            destinations[f"{regency} · {d}"] = (regency, d)
-        if not districts:
-            destinations[f"{regency} · semua kecamatan"] = (regency, REGENCY_LEVEL)
-    pick = c2.selectbox("Ke (kab/kota · kecamatan)", sorted(destinations), index=None, disabled=origin is None,
-                        placeholder="Ketik kabupaten atau kecamatan", key="dest_pick")
-    dest, district = destinations.get(pick, (None, None))
-    to_dest = from_origin[from_origin["dest_regency"] == dest]
+    with st.container(key="route"):
+        c1, c_arrow, c2 = st.columns([10, 1, 10], vertical_alignment="bottom", gap="small")
+        origin = c1.selectbox(":material/warehouse: Asal · kab/kota", sorted(rates["origin_regency"].dropna().unique()),
+                              index=None, placeholder="Pilih kota asal", key="origin")
+        c_arrow.markdown('<div class="route-arrow">→</div>', unsafe_allow_html=True)
+        from_origin = rates[rates["origin_regency"] == origin]
+        destinations = {}
+        for regency, g in from_origin.groupby("dest_regency"):
+            districts = sorted(g["dest_district"].dropna().unique())
+            for d in districts:
+                destinations[f"{regency} · {d}"] = (regency, d)
+            if not districts:
+                destinations[f"{regency} · semua kecamatan"] = (regency, REGENCY_LEVEL)
+        pick = c2.selectbox(":material/location_on: Tujuan · kab/kota & kecamatan", sorted(destinations), index=None,
+                            disabled=origin is None, placeholder="Ketik kabupaten atau kecamatan", key="dest_pick")
+        dest, district = destinations.get(pick, (None, None))
+        to_dest = from_origin[from_origin["dest_regency"] == dest]
+        if origin:
+            st.markdown(f'<div class="route-meta">{num(len(destinations))} tujuan tersedia dari {html.escape(origin)}'
+                        f' · {from_origin["logistic_vendor"].nunique()} vendor</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="route-meta">Pilih kota asal dulu, lalu ketik kabupaten atau kecamatan tujuan.</div>',
+                        unsafe_allow_html=True)
 
 # ---------- step 3: summary & recommendation ----------
 
