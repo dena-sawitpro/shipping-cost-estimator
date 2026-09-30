@@ -154,6 +154,7 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .route-arrow{display:grid;place-items:center;width:30px;height:30px;margin:0 auto 8px;border-radius:50%;background:var(--leaf);
   color:var(--palm);font-weight:700;border:1px solid #C9D6B8;}
 .route-meta{font-size:.74rem;color:var(--muted);}
+@media (min-width:641px){.st-key-route [data-testid="stColumn"]:nth-child(2){flex:0 0 30px !important;min-width:30px !important;}}
 .st-key-cart{gap:.5rem;margin-top:.2rem;}
 [class*="st-key-line_"]{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:.5rem .6rem .5rem .5rem;
   box-shadow:0 10px 24px -22px rgba(30,46,26,.6);transition:border-color .15s;}
