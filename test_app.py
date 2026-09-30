@@ -27,3 +27,19 @@ scenario("MOP Canada x2 (100 kg)", {"10101600": 2}, "Kota Dumai", "Kab. Kampar �
 scenario("Bablass 1L x40", {"10300100": 40}, "Kota Pekanbaru", "Kab. Siak · Siak")
 scenario("MOP Canada x700", {"10101600": 700}, "Kota Dumai", "Kab. Batanghari · semua kecamatan")
 
+
+def total_kg(at) -> str:
+    return re.search(r'Total berat</div><div class="v">([^<]+)', " ".join(m.value for m in at.markdown)).group(1)
+
+
+at = AppTest.from_file("app.py", default_timeout=60)
+at.session_state["cart"] = ["10101600", "10300100"]
+at.run()
+assert total_kg(at) == "51 kg", total_kg(at)
+at.number_input(key="q_10101600").increment().run()
+assert total_kg(at) == "101 kg", total_kg(at)
+at.button(key="del_10101600").click().run()
+assert at.session_state["cart"] == ["10300100"] and total_kg(at) == "1 kg", total_kg(at)
+assert not at.exception, at.exception
+print("\nstepper + delete: ok")
+

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import base64
-import hashlib
 import html
 import math
 import os
@@ -29,8 +28,6 @@ FLEET_LABEL = {"PU_BV": "Pick-up / L300", "CDE": "CDE", "CDD": "CDD", "FUSO": "F
                "CARGO": "Cargo", "CUSTOM": "Tanpa jenis truk"}
 REGENCY_LEVEL = "Semua kecamatan (tarif tingkat kab/kota)"
 LOADING_FEE_PER_TON = 35_000
-MOBILE = "Mobi" in (st.context.headers.get("User-Agent") or "")
-
 
 def rp(x: float) -> str:
     return "Rp " + f"{x:,.0f}".replace(",", ".")
@@ -138,7 +135,28 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 .step b{display:inline-grid;place-items:center;width:1.65rem;height:1.65rem;border-radius:50%;background:var(--palm);color:var(--sun);font-size:.8rem;}
 .step span{font-family:'Fraunces',Georgia,serif;font-size:1.3rem;color:var(--ink);}
 .help{font-size:.78rem;color:var(--muted);margin:-.2rem 0 .5rem;}
-[data-testid="stDataFrame"]{border-radius:14px;overflow:hidden;box-shadow:0 14px 30px -24px rgba(30,46,26,.6);}
+.st-key-cart{gap:.5rem;margin-top:.2rem;}
+[class*="st-key-line_"]{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:.5rem .6rem .5rem .5rem;
+  box-shadow:0 10px 24px -22px rgba(30,46,26,.6);transition:border-color .15s;}
+[class*="st-key-line_"]:hover{border-color:#C9D6B8;}
+[class*="st-key-line_"] [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;gap:.7rem;align-items:center;}
+[class*="st-key-line_"] [data-testid="stColumn"]{min-width:0 !important;width:auto !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 48px !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(2){flex:1 1 auto !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(3){flex:0 0 132px !important;}
+[class*="st-key-line_"] [data-testid="stColumn"]:nth-child(4){flex:0 0 34px !important;}
+.pthumb{display:block;width:48px;height:48px;border-radius:10px;object-fit:cover;background:#fff;border:1px solid #EEE8D6;}
+.pname{font-size:.9rem;font-weight:600;color:var(--ink);line-height:1.25;overflow:hidden;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.pmeta{font-size:.74rem;color:var(--muted);margin-top:.15rem;font-variant-numeric:tabular-nums;}
+.pmeta b{color:var(--palm);}
+[class*="st-key-q_"] [data-testid="stNumberInputContainer"]{border-radius:10px;border:1.5px solid var(--palm) !important;
+  background:#fff;overflow:hidden;}
+[class*="st-key-q_"] input{text-align:center;font-weight:700;font-size:1rem;color:var(--ink);padding-left:.3rem;padding-right:0;}
+[class*="st-key-q_"] button{background:var(--leaf);color:var(--palm);border:none;width:2rem;height:100%;}
+[class*="st-key-q_"] button:hover{background:var(--palm);color:#fff;}
+[class*="st-key-del_"] button{color:#9AA08F;min-height:2rem;padding:.2rem;}
+[class*="st-key-del_"] button:hover{color:var(--alert);background:#FBE9E6;}
 .st-key-summary{position:sticky;top:1rem;}
 .total{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:.6rem;background:linear-gradient(135deg,#FFFEF9 0%,#F3F7EC 100%);
   border:1px solid var(--line);border-radius:var(--radius);padding:1rem 1.2rem;}
@@ -198,6 +216,12 @@ table.alt td small{display:block;font-size:.7rem;font-weight:500;color:var(--mut
   .step span{font-size:1.15rem;}
   .total .v{font-size:1.35rem;}
   .waybill .price{font-size:1.9rem;}
+  [class*="st-key-line_"] [data-testid="stHorizontalBlock"]{gap:.5rem;}
+  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(1){flex:0 0 40px !important;}
+  [class*="st-key-line_"] [data-testid="stColumn"]:nth-child(3){flex:0 0 124px !important;}
+  [class*="st-key-q_"] button{width:1.7rem;}
+  .pthumb{width:40px;height:40px;}
+  .pname{font-size:.84rem;}
   table.alt thead{display:none;}
   table.alt,table.alt tbody,table.alt tr,table.alt td{display:block;width:100%;}
   table.alt{border:none;background:transparent;box-shadow:none;}
@@ -241,10 +265,9 @@ def add_product():
     st.session_state["add"] = None
 
 
-def remove_product(irs: list[str]):
-    click = st.session_state.get("remove_click")
-    if click is not None:
-        st.session_state["cart"] = [ir for ir in st.session_state.get("cart", []) if ir != irs[click["row"]]]
+def remove_product(ir: str):
+    st.session_state["cart"] = [i for i in st.session_state.get("cart", []) if i != ir]
+    st.session_state.pop(f"q_{ir}", None)
 
 
 left, right = st.columns([1.5, 1], gap="large")
@@ -264,38 +287,29 @@ with left:
     pool = products[products["category"].isin(picked) & ~products["ir"].isin(chosen)]
     c_search.selectbox("Cari produk", pool["ir"].tolist(), format_func=product_label, index=None, key="add",
                        on_change=add_product, placeholder="🔍  Cari & tambah produk…", label_visibility="collapsed")
-    qty = {ir: st.session_state.get("qty", {}).get(ir, 1) for ir in chosen}
+    saved = st.session_state.get("qty", {})
+    qty = {}
 
     if chosen:
-        table = pd.DataFrame({
-            "ir": chosen,
-            "hapus": ":material/delete:",
-            "foto": [thumb(ir, pmap.at[ir, "category"]) for ir in chosen],
-            "produk": [pmap.at[ir, "name"] for ir in chosen],
-            "jumlah": [qty[ir] for ir in chosen],
-            "berat": [float(pmap.at[ir, "weight_kg"]) for ir in chosen],
-        })
-        editor_key = "ed_" + hashlib.md5(",".join(chosen).encode()).hexdigest()[:12]
-        styled = table.style.set_properties(
-            subset=["foto", "produk", "berat"], **{"background-color": "#E6DEC6", "color": "#6B6F60"})
-        edited = st.data_editor(
-            styled, key=editor_key, hide_index=True,
-            width="stretch", row_height=54, column_order=["hapus", "jumlah", "foto", "produk", "berat"],
-            disabled=["foto", "produk", "berat"],
-            column_config={
-                "hapus": st.column_config.ButtonColumn("", width=36, type="tertiary", help="Keluarkan produk",
-                                                       on_click=remove_product, args=(chosen,), key="remove_click"),
-                "foto": st.column_config.ImageColumn("", width=50),
-                "produk": st.column_config.TextColumn("Produk", width=170 if MOBILE else 430),
-                "jumlah": st.column_config.NumberColumn("Jumlah ✎", min_value=0, step=1, format="%d", width=72,
-                                                        alignment="center", help="Ketik jumlah unit yang dikirim"),
-                "berat": st.column_config.NumberColumn("Berat", format="%g kg", width=70, alignment="center"),
-            })
-        qty = {ir: 0 if pd.isna(n) else int(n) for ir, n in zip(edited["ir"], edited["jumlah"])}
-        st.markdown('<div class="help">Ketik jumlah unit di kolom terang <b>Jumlah ✎</b>. Klik ikon tempat sampah untuk mengeluarkan produk.</div>',
+        with st.container(key="cart"):
+            for ir in chosen:
+                st.session_state.setdefault(f"q_{ir}", saved.get(ir, 1))
+                unit_kg = float(pmap.at[ir, "weight_kg"])
+                with st.container(key=f"line_{ir}"):
+                    c_img, c_name, c_qty, c_del = st.columns([1, 6, 3, 1], vertical_alignment="center", gap="small")
+                    c_img.markdown(f'<img class="pthumb" src="{thumb(ir, pmap.at[ir, "category"])}" alt="">',
+                                   unsafe_allow_html=True)
+                    n = c_qty.number_input("Jumlah", min_value=0, step=1, key=f"q_{ir}", label_visibility="collapsed")
+                    c_name.markdown(f'<div class="pname">{html.escape(pmap.at[ir, "name"])}</div>'
+                                    f'<div class="pmeta">{kg(unit_kg)} × {num(n)} = <b>{kg(unit_kg * n)}</b></div>',
+                                    unsafe_allow_html=True)
+                    c_del.button("", icon=":material/delete:", key=f"del_{ir}", type="tertiary",
+                                 help="Keluarkan produk", on_click=remove_product, args=(ir,))
+                qty[ir] = int(n)
+        st.markdown('<div class="help">Atur jumlah dengan tombol <b>−</b> / <b>+</b> atau ketik langsung.</div>',
                     unsafe_allow_html=True)
     else:
-        st.markdown('<div class="empty slim">Cari produk di atas, lalu isi jumlahnya di tabel yang muncul.</div>',
+        st.markdown('<div class="empty slim">Cari produk di atas, lalu atur jumlahnya di daftar yang muncul.</div>',
                     unsafe_allow_html=True)
     st.session_state["qty"] = qty
     total_kg = sum(n * float(pmap.at[ir, "weight_kg"]) for ir, n in qty.items())
