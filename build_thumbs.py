@@ -1,6 +1,6 @@
 """Match product photos (named after the Odoo product) to IR codes and write small square thumbnails to assets/products/<ir>.webp.
 
-Usage: python build_thumbs.py "C:\\Users\\denaf\\Downloads\\SawitPRO Foto Produk"
+Usage: python build_thumbs.py "C:\\Users\\denaf\\Documents\\sawitpro\\06-product\\foto-produk"
 """
 import re
 import sys
