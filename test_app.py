@@ -53,3 +53,16 @@ at.run()
 assert 0 < herbicides < everything == len(at.selectbox(key="add").options), (herbicides, everything)
 print(f"category filter: all {everything} -> Herbisida {herbicides} -> reset {everything}: ok")
 
+at = AppTest.from_file("app.py", default_timeout=60)
+at.session_state["calc_mode"] = "berat"
+at.session_state["direct_kg"] = 2500.0
+at.run()
+assert not at.exception, at.exception
+assert total_kg(at) == "2.500 kg", total_kg(at)
+assert "Langsung" in " ".join(m.value for m in at.markdown)
+at.selectbox(key="origin").select("Kota Dumai").run()
+at.selectbox(key="dest_pick").select("Kab. Kampar · Bangkinang").run()
+priced = re.search(r'class="price">([^<]+)', " ".join(m.value for m in at.markdown))
+assert priced, "direct weight produced no estimate"
+print(f"direct weight 2.500 kg -> {priced.group(1)}: ok")
+

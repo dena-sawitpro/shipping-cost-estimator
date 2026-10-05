@@ -148,6 +148,27 @@ header[data-testid="stHeader"]{background:transparent;height:0;}
 [data-testid="stPopover"] button{background:#fff;border:1px solid var(--line);border-radius:12px;min-height:46px;color:var(--ink);
   box-shadow:0 1px 2px rgba(30,46,26,.04),0 6px 16px -12px rgba(30,46,26,.35);}
 [data-testid="stPopover"] button:hover{border-color:#B9C9A6;color:var(--palm);}
+.st-key-calc_mode{margin:.85rem 0 1.15rem;max-width:26rem;}
+.st-key-calc_mode [data-testid="stButtonGroup"]{width:100%;background:var(--paper);border:1px solid var(--line);
+  border-radius:14px;padding:3px;gap:3px;box-shadow:0 10px 24px -22px rgba(30,46,26,.55);}
+.st-key-calc_mode button{flex:1 1 0;min-height:40px;border:none !important;border-radius:11px !important;
+  background:transparent !important;color:var(--muted) !important;font-size:.82rem;font-weight:600;
+  letter-spacing:.01em;box-shadow:none !important;}
+.st-key-calc_mode button p{font-size:.82rem !important;font-weight:600 !important;}
+.st-key-calc_mode button:hover{color:var(--palm) !important;background:var(--leaf) !important;}
+.st-key-calc_mode button[kind="primary"],.st-key-calc_mode button[aria-checked="true"]{
+  background:var(--palm) !important;color:#F4F1E4 !important;
+  box-shadow:0 8px 18px -12px rgba(46,74,37,.85) !important;}
+.st-key-calc_mode button[kind="primary"]:hover,.st-key-calc_mode button[aria-checked="true"]:hover{
+  background:var(--palm-deep) !important;color:#fff !important;}
+.st-key-direct_kg label p{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+.st-key-direct_kg [data-testid="stNumberInputContainer"]{border-radius:14px;border:1px solid var(--line) !important;
+  background:#fff;min-height:52px;overflow:hidden;box-shadow:0 1px 2px rgba(30,46,26,.04),0 6px 16px -12px rgba(30,46,26,.35);}
+.st-key-direct_kg [data-testid="stNumberInputContainer"]:focus-within{border-color:var(--palm) !important;
+  box-shadow:0 0 0 3px rgba(66,102,54,.14);}
+.st-key-direct_kg input{font-weight:700;font-size:1.2rem;color:var(--ink);}
+.st-key-direct_kg button{background:var(--leaf);color:var(--palm);border:none;width:2.4rem;}
+.st-key-direct_kg button:hover{background:var(--palm);color:#fff;}
 .st-key-route{gap:.7rem;}
 .st-key-route [data-testid="stMarkdownContainer"]{margin-bottom:0 !important;}
 .st-key-route label p{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;}
@@ -272,8 +293,8 @@ st.markdown(f"""
   <div>
     <div class="eyebrow">SawitPRO · Logistik</div>
     <h1>Shipping Cost Estimator</h1>
-    <p>Isi jumlah produk dan pilih rute. Estimator menghitung total berat lalu membandingkan tarif
-    per trip dan per kg dari semua vendor.</p>
+    <p>Hitung dari daftar produk, atau masukkan berat langsung, lalu pilih rute. Estimator membandingkan
+    tarif per trip dan per kg dari semua vendor.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -306,48 +327,62 @@ left, right = st.columns([1.5, 1], gap="large")
 # ---------- step 1: products ----------
 
 with left:
-    step(1, "Pilih produk")
-    selected = st.session_state.get("cats") or []
-    picked = selected or CATEGORIES
-    filter_label = ("Semua kategori" if not selected else selected[0] if len(selected) == 1
-                    else f"{len(selected)} kategori")
-    c_filter, c_search = st.columns([1, 2.8], vertical_alignment="bottom")
-    with c_filter.popover(filter_label, icon=":material/filter_list:", width="stretch"):
-        st.pills("Kategori", CATEGORIES, format_func=lambda c: f"{CATEGORY_STYLE[c][0]} {c}", selection_mode="multi",
-                 key="cats")
-        st.caption("Awalnya semua kategori tampil. Klik satu atau beberapa kategori untuk menyaring.")
-        st.button("Tampilkan semua", icon=":material/restart_alt:", type="tertiary", disabled=not selected,
-                  on_click=lambda: st.session_state.update(cats=[]))
-    chosen = [ir for ir in dict.fromkeys(st.session_state.get("cart", [])) if ir in pmap.index]
-    pool = products[products["category"].isin(picked) & ~products["ir"].isin(chosen)]
-    c_search.selectbox("Cari produk", pool["ir"].tolist(), format_func=product_label, index=None, key="add",
-                       on_change=add_product, placeholder="Cari & tambah produk…", label_visibility="collapsed")
-    saved = st.session_state.get("qty", {})
-    qty = {}
-
-    if chosen:
-        with st.container(key="cart"):
-            for ir in chosen:
-                st.session_state.setdefault(f"q_{ir}", saved.get(ir, 1))
-                unit_kg = float(pmap.at[ir, "weight_kg"])
-                with st.container(key=f"line_{ir}"):
-                    c_del, c_qty, c_img, c_name = st.columns([1, 3, 1, 6], vertical_alignment="center", gap="small")
-                    c_img.markdown(f'<img class="pthumb" src="{thumb(ir, pmap.at[ir, "category"])}" alt="">',
-                                   unsafe_allow_html=True)
-                    n = c_qty.number_input("Jumlah", min_value=0, step=1, key=f"q_{ir}", label_visibility="collapsed")
-                    c_name.markdown(f'<div class="pname">{html.escape(pmap.at[ir, "name"])}</div>'
-                                    f'<div class="pmeta">{kg(unit_kg)} × {num(n)} = <b>{kg(unit_kg * n)}</b></div>',
-                                    unsafe_allow_html=True)
-                    c_del.button("", icon=":material/delete:", key=f"del_{ir}", type="tertiary",
-                                 help="Keluarkan produk", on_click=remove_product, args=(ir,))
-                qty[ir] = int(n)
-        st.markdown('<div class="help">Atur jumlah dengan tombol <b>−</b> / <b>+</b> atau ketik langsung.</div>',
+    mode = st.segmented_control(
+        "Cara hitung",
+        ["produk", "berat"],
+        default="produk",
+        format_func=lambda m: "Dari produk" if m == "produk" else "Dari berat",
+        key="calc_mode",
+        label_visibility="collapsed",
+        width="stretch",
+    ) or "produk"
+    step(1, "Pilih produk" if mode == "produk" else "Masukkan berat")
+    if mode == "berat":
+        st.markdown('<div class="help">Angka ini dipakai langsung sebagai total berat. Tidak dikalikan berat produk.</div>',
                     unsafe_allow_html=True)
+        total_kg = float(st.number_input("Berat kiriman (kg)", min_value=0.0, step=1.0, key="direct_kg", format="%.2f"))
+        qty = {}
     else:
-        st.markdown('<div class="empty slim">Cari produk di atas, lalu atur jumlahnya di daftar yang muncul.</div>',
-                    unsafe_allow_html=True)
-    st.session_state["qty"] = qty
-    total_kg = sum(n * float(pmap.at[ir, "weight_kg"]) for ir, n in qty.items())
+        selected = st.session_state.get("cats") or []
+        picked = selected or CATEGORIES
+        filter_label = ("Semua kategori" if not selected else selected[0] if len(selected) == 1
+                        else f"{len(selected)} kategori")
+        c_filter, c_search = st.columns([1, 2.8], vertical_alignment="bottom")
+        with c_filter.popover(filter_label, icon=":material/filter_list:", width="stretch"):
+            st.pills("Kategori", CATEGORIES, format_func=lambda c: f"{CATEGORY_STYLE[c][0]} {c}", selection_mode="multi",
+                     key="cats")
+            st.caption("Awalnya semua kategori tampil. Klik satu atau beberapa kategori untuk menyaring.")
+            st.button("Tampilkan semua", icon=":material/restart_alt:", type="tertiary", disabled=not selected,
+                      on_click=lambda: st.session_state.update(cats=[]))
+        chosen = [ir for ir in dict.fromkeys(st.session_state.get("cart", [])) if ir in pmap.index]
+        pool = products[products["category"].isin(picked) & ~products["ir"].isin(chosen)]
+        c_search.selectbox("Cari produk", pool["ir"].tolist(), format_func=product_label, index=None, key="add",
+                           on_change=add_product, placeholder="Cari & tambah produk…", label_visibility="collapsed")
+        saved = st.session_state.get("qty", {})
+        qty = {}
+        if chosen:
+            with st.container(key="cart"):
+                for ir in chosen:
+                    st.session_state.setdefault(f"q_{ir}", saved.get(ir, 1))
+                    unit_kg = float(pmap.at[ir, "weight_kg"])
+                    with st.container(key=f"line_{ir}"):
+                        c_del, c_qty, c_img, c_name = st.columns([1, 3, 1, 6], vertical_alignment="center", gap="small")
+                        c_img.markdown(f'<img class="pthumb" src="{thumb(ir, pmap.at[ir, "category"])}" alt="">',
+                                       unsafe_allow_html=True)
+                        n = c_qty.number_input("Jumlah", min_value=0, step=1, key=f"q_{ir}", label_visibility="collapsed")
+                        c_name.markdown(f'<div class="pname">{html.escape(pmap.at[ir, "name"])}</div>'
+                                        f'<div class="pmeta">{kg(unit_kg)} × {num(n)} = <b>{kg(unit_kg * n)}</b></div>',
+                                        unsafe_allow_html=True)
+                        c_del.button("", icon=":material/delete:", key=f"del_{ir}", type="tertiary",
+                                     help="Keluarkan produk", on_click=remove_product, args=(ir,))
+                    qty[ir] = int(n)
+            st.markdown('<div class="help">Atur jumlah dengan tombol <b>−</b> / <b>+</b> atau ketik langsung.</div>',
+                        unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="empty slim">Cari produk di atas, lalu atur jumlahnya di daftar yang muncul.</div>',
+                        unsafe_allow_html=True)
+        st.session_state["qty"] = qty
+        total_kg = sum(n * float(pmap.at[ir, "weight_kg"]) for ir, n in qty.items())
 
     # ---------- step 2: route ----------
 
@@ -388,14 +423,21 @@ loading_fee = loading_tons * LOADING_FEE_PER_TON
 with right:
     with st.container(key="summary"):
         step(3, "Estimasi")
+        if mode == "berat":
+            mid = ('<div><div class="l">Cara hitung</div><div class="v">Berat</div></div>'
+                   '<div><div class="l">Sumber</div><div class="v">Langsung</div></div>')
+        else:
+            mid = (f'<div><div class="l">Produk</div><div class="v">{len(qty)}</div></div>'
+                   f'<div><div class="l">Unit</div><div class="v">{num(sum(qty.values()))}</div></div>')
         st.markdown(
-            f'<div class="total"><div><div class="l">Total berat</div><div class="v">{kg(total_kg)}</div></div>'
-            f'<div><div class="l">Produk</div><div class="v">{len(qty)}</div></div>'
-            f'<div><div class="l">Unit</div><div class="v">{num(sum(qty.values()))}</div></div></div>',
+            f'<div class="total"><div><div class="l">Total berat</div><div class="v">{kg(total_kg)}</div></div>{mid}</div>',
             unsafe_allow_html=True)
 
         if not ready:
-            todo = "Cari dan pilih produk" if total_kg <= 0 else "Lengkapi kota asal dan tujuan"
+            if total_kg <= 0:
+                todo = "Isi berat kiriman" if mode == "berat" else "Cari dan pilih produk"
+            else:
+                todo = "Lengkapi kota asal dan tujuan"
             st.markdown(f'<div class="empty"><b>Belum ada estimasi</b>{todo} untuk melihat ongkos kirim termurah.</div>',
                         unsafe_allow_html=True)
         elif eligible.empty:
